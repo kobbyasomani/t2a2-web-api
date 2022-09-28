@@ -1,0 +1,46 @@
+import os
+
+
+class Config(object):
+    """ Application configuration settings """
+    # Turn off SQLALchemy model modification tracking
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Test mode is off by default
+    TESTING = False
+
+    @property
+    def SQLALCHEMY_DATABASE_URI(self):
+        """ Get database URI from .env to use in db connection string """
+        URL = os.environ.get('SQLALCHEMY_DATABASE_URI')
+        # Raise an error if value is empty
+        if not URL:
+            raise ValueError("The SQLAlchemy database URI has not been set.")
+
+        return URL
+
+
+# Different configurations using class inheritance
+class TestingConfig(object):
+    """ Testing Configuration """
+    TESTING = True
+
+
+class DevelopmentConfig(object):
+    """ Development Configuration """
+    DEBUG = True
+
+
+class ProductionConfig(object):
+    """ Production Configuration """
+    pass
+
+
+# Set the configuration depending on the environment
+if os.environ.get("FLASK_DEBUG") == True:
+    app_config = DevelopmentConfig()
+
+elif os.environ.get("FLASK_TESTING") == True:
+    app_config = TestingConfig()
+
+else:
+    app_config = ProductionConfig()
