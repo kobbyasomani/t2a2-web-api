@@ -11,26 +11,26 @@ class Config(object):
     @property
     def SQLALCHEMY_DATABASE_URI(self):
         """ Get database URI from .env to use in db connection string """
-        URL = os.environ.get('SQLALCHEMY_DATABASE_URI')
+        URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
         # Raise an error if value is empty
-        if not URL:
+        if not URI:
             raise ValueError("The SQLAlchemy database URI has not been set.")
 
-        return URL
+        return URI
 
 
 # Different configurations using class inheritance
-class TestingConfig(object):
+class TestingConfig(Config):
     """ Testing Configuration """
     TESTING = True
 
 
-class DevelopmentConfig(object):
+class DevelopmentConfig(Config):
     """ Development Configuration """
     DEBUG = True
 
 
-class ProductionConfig(object):
+class ProductionConfig(Config):
     """ Production Configuration """
     pass
 
