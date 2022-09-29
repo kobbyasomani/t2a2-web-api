@@ -6,6 +6,6 @@ class Recommendation(db.Model):
 
     vote_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey(
-        "user.user_id"), nullable=False)
+        "users.user_id"), nullable=False)
     answer_id = db.Column(db.Integer, db.ForeignKey(
         "answers.answer_id"), nullable=False)
