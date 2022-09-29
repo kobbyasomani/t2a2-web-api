@@ -9,3 +9,4 @@ class Postcode(db.Model):
         "countries.country_id"), primary_key=True)
     state = db.Column(db.String(), nullable=False)
     city = db.Column(db.String(), nullable=False)
+    locations = db.relationship("Location", backref="postcode")

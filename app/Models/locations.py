@@ -10,3 +10,4 @@ class Location(db.Model):
     country_id = db.Column(db.String(2), db.ForeignKey(
         "postcodes.country_id"), nullable=False)
     suburb = db.Column(db.String(), nullable=False)
+    questions = db.relationship("Question", backref="location")

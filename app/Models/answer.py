@@ -14,3 +14,4 @@ class Answer(db.Model):
     date = db.Column(db.DateTime, nullable=False)
     # time = can be derived from DateTime value of date?
     body = db.Column(db.Text, nullable=False)
+    recommendations = db.relationship("Recommendation", backref="answer")
