@@ -6,7 +6,7 @@ class Answer(db.Model):
 
     answer_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey(
-        "users.user_id", nullable=False))
+        "users.user_id"), nullable=False)
     question_id = db.Column(db.Integer, db.ForeignKey(
         "questions.question_id"), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey(
