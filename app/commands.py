@@ -5,7 +5,7 @@ from app import db
 from app.models.answer import Answer
 from app.models.category import Category
 from app.models.country import Country
-from app.models.locations import Location
+from app.models.location import Location
 from app.models.postcode import Postcode
 from app.models.question import Question
 from app.models.recommendation import Recommendation
@@ -31,7 +31,17 @@ def create_tables():
 
 
 @db_commands.cli.command("seed")
-def create_tables():
+def seed_tables():
     """ Seed all tables in the connected database """
 
+    # Create a user
+    user1 = User(
+        # user_id is a sequentially generated integer
+        username="user1",
+        password="12345678"
+    )
+
+    db.session.add(user1)
+
+    db.session.commit()
     print("Database: Tables seeded")
