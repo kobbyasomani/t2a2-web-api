@@ -1,6 +1,6 @@
 from flask import Blueprint
 from app import db
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 # Import models
 from app.models.answer import Answer
@@ -58,12 +58,19 @@ def seed_tables():
         )
         db.session.add(category)
 
-    # Add a user
+    # Add users
     user1 = User(
         username="user1",
         password="12345678"
     )
     db.session.add(user1)
+
+    user2 = User(
+        username="user2",
+        password="12345678"
+    )
+    db.session.add(user2)
+    db.session.commit()
 
     # Add a country
     country1 = Country(
@@ -94,11 +101,43 @@ def seed_tables():
         user_id=1,
         location_id=1,
         category_id=1,
-        date=datetime.now(timezone.utc),
-        body=("Hello! I'm moving to Perth soon.\nWhat's a good low-cost hotel "
-            "to stay at for a few nights after arriving?")
+        date_time=datetime.now(timezone.utc),
+        body=("Hello! I'm moving to Perth soon.\nWhat's a good low-cost place "
+            "to stay for a few nights after arriving?")
     )
     db.session.add(question1)
+
+    # Add an answer
+    answer1 = Answer(
+        user_id=2,
+        question_id=1,
+        parent_id=None,
+        date_time=datetime.now(timezone.utc) + timedelta(hours=1),
+        body=("Welcome!\nAre you looking for a hostel or a hotel, "
+            "and how many people do you need to fit?")
+    )
+    db.session.add(answer1)
+
+    # Add a reply to an answer (answer with parent)
+    reply1 = Answer(
+        user_id=1,
+        question_id=1,
+        parent_id=1,
+        date_time=datetime.now(timezone.utc) + timedelta(hours=2),
+        body=("I'm a solo traveller and looking for a hotel.")
+    )
+    db.session.add(reply1)
+
+    # Add a nested reply (a reply to a reply)
+    reply2 = Answer(
+        user_id=2,
+        question_id=1,
+        parent_id=2,
+        date_time=datetime.now(timezone.utc) + timedelta(hours=2.5),
+        body=("ibis Perth is pretty close to the city centre and not "
+            "too expensive.")
+    )
+    db.session.add(reply2)
 
     db.session.commit()
     print("Database: Tables seeded")

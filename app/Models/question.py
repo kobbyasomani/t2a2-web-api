@@ -11,7 +11,7 @@ class Question(db.Model):
         "locations.location_id"), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey(
         "categories.category_id"), nullable=False)
-    date = db.Column(db.DateTime, nullable=False)
+    date_time = db.Column(db.DateTime, nullable=False)
     # time = can be derived from DateTime value of date?
     body = db.Column(db.Text, nullable=False)
     answers = db.relationship("Answer", backref="question")
