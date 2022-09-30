@@ -34,6 +34,29 @@ def create_tables():
 def seed_tables():
     """ Seed all tables in the connected database """
 
+    # Add question categories
+    categories = {
+        "Accommodation": "hotels and short-term rentals",
+        "Housing": "renting or buying properties",
+        "Venues": "cultural, entertainment, and sports venues",
+        "Food & Drink": "grocery stores, restaurants, cafés, and bars",
+        "Shopping": "retail stores and shopping centres",
+        "Transport": "public transport, taxis, and ride-sharing",
+        "Money": "ATMs, banks, insurance, and financial services",
+        "Health & Medicine": ("pharmacies, doctors, "
+                                "health practictioners, and hospitals"),
+        "Services": "post, vehicle, laundromat, and other services",
+        "Trades": "plumbing, electrical, carpentry, and other trade services",
+        "Miscellaneous": "miscellaneous topics"
+    }
+
+    for cat_name, cat_description in categories.items():
+        category = Category(
+            name = cat_name,
+            description = cat_description
+        )
+        db.session.add(category)
+
     # Create a user
     user1 = User(
         # user_id is a sequentially generated integer
