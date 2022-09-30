@@ -139,5 +139,12 @@ def seed_tables():
     )
     db.session.add(reply2)
 
+    # Add a recommendation
+    recommendation1 = Recommendation(
+        user_id = 1,
+        answer_id = 1
+    )
+    db.session.add(recommendation1)
+
     db.session.commit()
     print("Database: Tables seeded")
