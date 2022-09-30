@@ -6,5 +6,4 @@ class Country(db.Model):
 
     country_id = db.Column(db.String(2), primary_key=True)
     name = db.Column(db.String(), nullable=False)
-    description = db.Column(db.String(), nullable=False)
     postcodes = db.relationship("Postcode", backref="country")

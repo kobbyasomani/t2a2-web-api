@@ -1,5 +1,6 @@
 from flask import Blueprint
 from app import db
+from datetime import datetime, timezone
 
 # Import models
 from app.models.answer import Answer
@@ -44,7 +45,7 @@ def seed_tables():
         "Transport": "public transport, taxis, and ride-sharing",
         "Money": "ATMs, banks, insurance, and financial services",
         "Health & Medicine": ("pharmacies, doctors, "
-                                "health practictioners, and hospitals"),
+                            "health practitioners, and hospitals"),
         "Services": "post, vehicle, laundromat, and other services",
         "Trades": "plumbing, electrical, carpentry, and other trade services",
         "Miscellaneous": "miscellaneous topics"
@@ -52,19 +53,52 @@ def seed_tables():
 
     for cat_name, cat_description in categories.items():
         category = Category(
-            name = cat_name,
-            description = cat_description
+            name=cat_name,
+            description=cat_description
         )
         db.session.add(category)
 
-    # Create a user
+    # Add a user
     user1 = User(
-        # user_id is a sequentially generated integer
         username="user1",
         password="12345678"
     )
-
     db.session.add(user1)
+
+    # Add a country
+    country1 = Country(
+        country_id="AU",
+        name="Australia"
+    )
+    db.session.add(country1)
+
+    # Add a postcode
+    postcode1 = Postcode(
+        code="6000",
+        country_id="AU",
+        state="Western Australia",
+        city="Perth"
+    )
+    db.session.add(postcode1)
+
+    # Add a location
+    location1 = Location(
+        code=6000,
+        country_id="AU",
+        suburb="Perth"
+    )
+    db.session.add(location1)
+
+    # Add a question
+    question1 = Question(
+        user_id=1,
+        location_id=1,
+        category_id=1,
+        date=datetime.now(timezone.utc),
+        body=("Hello! I'm moving to Perth soon.\nWhat's a good low-cost hotel "
+            "to stay at for a few nights after arriving?")
+    )
+    db.session.add(question1)
 
     db.session.commit()
     print("Database: Tables seeded")
