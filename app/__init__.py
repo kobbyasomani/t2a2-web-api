@@ -21,6 +21,8 @@ def create_app():
     # Initialise extension instances for use with the app
     db.init_app(app)
     ma.init_app(app)
+    bcrypt.init_app(app)
+    jwt.init_app(app)
 
     # Register CLI commands for database
     from app.commands import db_commands

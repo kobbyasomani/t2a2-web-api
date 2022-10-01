@@ -5,8 +5,6 @@ class Config(object):
     """ Application configuration settings """
     # Turn off SQLALchemy model modification tracking
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    # Test mode is off by default
-    TESTING = False
 
     @property
     def SQLALCHEMY_DATABASE_URI(self):
@@ -17,6 +15,9 @@ class Config(object):
             raise ValueError("The SQLAlchemy database URI has not been set.")
 
         return URI
+
+    # Get the JWT secret key for signing access tokens
+    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
 
 
 # Different configurations using class inheritance
