@@ -1,14 +1,17 @@
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import or_
 from app import db
 from app.models.user import User
-from app.schemas.user_schema import user_schema, users_schema
+from app.schemas.user_schema import (
+    user_schema, user_schema_private,users_schema)
 
 
 users = Blueprint("users", __name__, url_prefix="/users")
 
 
 @users.get("/")
+@jwt_required()
 def get_users():
     """ Return a list of all users """
     users_list = User.query.all()
@@ -16,6 +19,7 @@ def get_users():
 
 
 @users.get("/<id>")
+@jwt_required()
 def get_user(id):
     """ Return a specific user by user_id or username """
     if id.isdigit():
@@ -24,7 +28,10 @@ def get_user(id):
         user = User.query.filter_by(username=id).first()
 
     if user:
-        return jsonify(user_schema.dump(user))
+        if int(get_jwt_identity()) == user.user_id:
+            return jsonify(user_schema_private.dump(user))
+        else:
+            return jsonify(user_schema.dump(user))
     else:
         return ({"error": "The user could not be found. "
                 "Please use a valid user id or username."})
