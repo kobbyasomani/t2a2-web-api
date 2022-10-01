@@ -1,5 +1,5 @@
 from flask import Blueprint
-from app import db
+from app import db, bcrypt
 from datetime import datetime, timezone, timedelta
 
 # Import models
@@ -62,14 +62,14 @@ def seed_tables():
     user1 = User(
         username="user1",
         email="user1@emailprovider.com",
-        password="12345678"
+        password=bcrypt.generate_password_hash("12345678").decode("utf-8")
     )
     db.session.add(user1)
 
     user2 = User(
         username="user2",
         email="user2@emailprovider.com",
-        password="12345678"
+        password=bcrypt.generate_password_hash("12345678").decode("utf-8")
     )
     db.session.add(user2)
     db.session.commit()
