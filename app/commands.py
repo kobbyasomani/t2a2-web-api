@@ -61,12 +61,14 @@ def seed_tables():
     # Add users
     user1 = User(
         username="user1",
+        email="user1@emailprovider.com",
         password="12345678"
     )
     db.session.add(user1)
 
     user2 = User(
         username="user2",
+        email="user2@emailprovider.com",
         password="12345678"
     )
     db.session.add(user2)
