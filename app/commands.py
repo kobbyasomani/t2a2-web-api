@@ -92,7 +92,7 @@ def seed_tables():
 
     # Add a location
     location1 = Location(
-        code=6000,
+        postcode=6000,
         country_id="AU",
         suburb="Perth"
     )
