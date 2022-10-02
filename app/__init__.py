@@ -10,6 +10,7 @@ ma = Marshmallow()
 bcrypt = Bcrypt()
 jwt = JWTManager()
 
+
 def create_app():
     """ Create the Flask application object """
     # Create a Flask app object and pass it this package

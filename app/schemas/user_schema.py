@@ -9,6 +9,7 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
         include_fk = True
         load_only = ["email", "password"]
 
+
 class UserSchemaPrivate(UserSchema):
     class Meta:
         model = User
@@ -16,6 +17,11 @@ class UserSchemaPrivate(UserSchema):
         load_only = ["password"]
 
 
+class UserSchemaUpdate(UserSchemaPrivate):
+    new_password = fields.String(required=False)
+
+
 user_schema = UserSchema()
-user_schema_private = UserSchemaPrivate()
+user_private_schema = UserSchemaPrivate()
+user_update_schema = UserSchemaUpdate()
 users_schema = UserSchema(many=True)
