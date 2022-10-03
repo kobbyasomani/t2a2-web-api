@@ -21,13 +21,21 @@ def find_user(id):
 
 
 def user_not_found():
+    """ Return a 404 response beacause the user could not be found """
     return ({"error": "The user could not be found. "
             "Please use a valid user id or username."}), 404
 
 
 def unauthorised_action():
+    """ Return a 403 response because the user cannot perform this action"""
     return ({"message": "You're not authorised "
             "to delete this user account."}, 403)
+
+
+def get_logged_in_user():
+    """ Return the id (integer) of the logged in user """
+    logged_in_user = int(get_jwt_identity())
+    return logged_in_user
 
 
 @users.get("/")
@@ -59,7 +67,7 @@ def update_user(id):
     """ Update the account details of a user """
     user = find_user(id)
     # Variable for easy access to currently logged-in user
-    current_user = int(get_jwt_identity())
+    logged_in_user = int(get_jwt_identity())
     user_fields = user_update_schema.load(
         request.json, partial=["username", "email", "new_password"])
     changes = False
@@ -76,7 +84,7 @@ def update_user(id):
     # If the user was found, validate and update details
     if user:
         # Make sure user is editing their own account
-        if current_user == user.user_id:
+        if logged_in_user == user.user_id:
             # Check the password again when editing account details
             if not password:
                 return ({"error": "You must enter your password "

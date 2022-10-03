@@ -12,6 +12,7 @@ class QuestionSchema(ma.SQLAlchemyAutoSchema):
         model = Question
         include_fk = True
         load_only = ["category_id", "user_id", "location_id"]
+        dump_only = ["date_time"]
     ordered = True
     author = fields.Nested(UserSchema())
     category = fields.Nested(CategorySchema())
@@ -23,6 +24,12 @@ class QuestionDetailsSchema(QuestionSchema):
     answers = fields.Nested(AnswerSchema(many=True))
 
 
+class QuestionPostSchema(QuestionSchema):
+    location_id = fields.Integer(required=True)
+    category_id = fields.Integer(required=True)
+    question = fields.String(required=True)
+
+
 class QuestionUpdateSchema(QuestionSchema):
     # update_only_field = fields.String(required=False)
     pass
@@ -31,4 +38,5 @@ class QuestionUpdateSchema(QuestionSchema):
 question_schema = QuestionSchema()
 question_details_schema = QuestionDetailsSchema()
 questions_schema = QuestionSchema(many=True)
+question_post_schema = QuestionPostSchema()
 question_update_schema = QuestionUpdateSchema()

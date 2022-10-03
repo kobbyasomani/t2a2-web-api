@@ -1,5 +1,8 @@
+from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
+from app import db
 from app.models.question import Question
 from app.models.location import Location
 from app.models.postcode import Postcode
@@ -7,7 +10,8 @@ from app.models.category import Category
 from app.models.user import User
 from app.schemas.question_schema import (
     question_schema, question_details_schema,
-    question_update_schema, questions_schema)
+    question_update_schema, questions_schema, question_post_schema)
+from app.controllers.users_controller import find_user, get_logged_in_user
 
 
 questions = Blueprint("questions", __name__, url_prefix="/questions")
@@ -100,7 +104,7 @@ def get_questions():
                     "for Australia)."}), 400
     else:
         questions_list = Question.query.all()
-        return show_questions_list(questions)
+        return show_questions_list(questions_list)
 
 
 @questions.get("/<int:id>")
@@ -121,14 +125,46 @@ def get_questions_by_category(id):
         questions_list = Question.query.filter(
             Question.category_id == id,
         ).all()
-        
+
     # Query by category_name
     else:
         questions_list = Question.query.join(
-            Question.category).filter_by(category_name=id.title()
+            Question.category).filter_by(
+                category_name=id.title()
         ).all()
 
     return show_questions_list(questions_list)
+
+
+@questions.post("/")
+@jwt_required()
+def post_question():
+    """ Post a new question """
+    # Get the question post fields
+    question_fields = question_post_schema.load(request.json, partial=True)
+    print(type(question_fields))
+
+    # Make sure location_id, and category_id and question are supplied
+    for key in question_fields.keys():
+        if (not key in ["location_id", "category_id", "question"]
+                or len(question_fields) < 3):
+            return ({"error": "You must provide a location_id (integer)"
+                    ", category_id (integer), and question (string) to"
+                    " post a new question."}), 400
+
+    # Construct the question object and add it to the database
+    new_question = Question(
+        user_id=get_logged_in_user(),
+        location_id=question_fields["location_id"],
+        category_id=question_fields["category_id"],
+        date_time=datetime.now(timezone.utc),
+        body=question_fields["question"]
+    )
+    db.session.add(new_question)
+    db.session.commit()
+
+    return ({"success": f"Your question '{new_question.body}' was posted in "
+            f"{new_question.category.category_name}."}, 201)
 
 
 # Return any other validation errors that are raised
