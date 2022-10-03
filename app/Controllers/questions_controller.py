@@ -44,7 +44,7 @@ def get_questions():
     # Check for a query string to filter results
     if request.query_string:
         filter_list = request.args.to_dict()
-        subquery_filters = {
+        join_filters = {
             "question": {},
             "user": {},
             "category": {},
@@ -65,29 +65,29 @@ def get_questions():
         # Add the filter to relevant subquery filter list
         for key, value in filter_list.items():
             if key in ["country_id", "suburb", "postcode"]:
-                subquery_filters["location"][key] = filter_list[key]
+                join_filters["location"][key] = filter_list[key]
             elif key in ["city", "state"]:
-                subquery_filters["postcode"][key] = filter_list[key]
+                join_filters["postcode"][key] = filter_list[key]
             elif key in ["country"]:
-                subquery_filters["country"]["name"] = filter_list[key]
+                join_filters["country"]["name"] = filter_list[key]
             elif key in ["username"]:
-                subquery_filters["user"][key] = filter_list[key]
+                join_filters["user"][key] = filter_list[key]
             elif key in ["category_name"]:
-                subquery_filters["category"][key] = filter_list[key]
+                join_filters["category"][key] = filter_list[key]
             else:
-                subquery_filters["question"][key] = filter_list[key]
+                join_filters["question"][key] = filter_list[key]
 
         # Filter questions list using request arguments
         if valid_filters:
             questions_list = Question.query.filter_by(
-                **subquery_filters["question"]).join(
-                User.query.filter_by(**subquery_filters["user"])).join(
+                **join_filters["question"]).join(
+                User.query.filter_by(**join_filters["user"])).join(
                     Location.query.filter_by(
-                        **subquery_filters["location"])).join(
+                        **join_filters["location"])).join(
                     Category.query.filter_by(
-                        **subquery_filters["category"])).join(
+                        **join_filters["category"])).join(
                     Postcode.query.filter_by(
-                        **subquery_filters["postcode"])).join(
+                        **join_filters["postcode"])).join(
                             Postcode.country
             ).all()
 
