@@ -10,3 +10,4 @@ class CategorySchema(ma.SQLAlchemyAutoSchema):
 
 
 category_schema = CategorySchema()
+categories_schema = CategorySchema(many=True)

@@ -78,7 +78,7 @@ def login_user():
     return {"user": user.username, "token": access_token}
 
 
-# Return a list of any other validation errors that are raised
+# Return any other validation errors that are raised
 @auth.errorhandler(ValidationError)
 def register_validation_error(error):
     return error.messages, 400

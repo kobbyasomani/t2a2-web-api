@@ -14,4 +14,9 @@ class Question(db.Model):
     date_time = db.Column(db.DateTime, nullable=False)
     # time = can be derived from DateTime value of date?
     body = db.Column(db.Text, nullable=False)
-    answers = db.relationship("Answer", backref="question")
+
+    # Relationships
+    author = db.relationship("User", back_populates="questions")
+    answers = db.relationship("Answer", back_populates="question")
+    category = db.relationship("Category", back_populates="questions")
+    location = db.relationship("Location", back_populates="questions")

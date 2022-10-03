@@ -9,7 +9,10 @@ class Postcode(db.Model):
         "countries.country_id"))
     state = db.Column(db.String(), nullable=False)
     city = db.Column(db.String(), nullable=False)
-    locations = db.relationship("Location", backref="code")
+
+    # Relationships
+    locations = db.relationship("Location", back_populates="code")
+    country = db.relationship("Country", back_populates="postcodes")
 
     # Define postcode_id and country_id as composite primary key
     __table_args__ = (db.PrimaryKeyConstraint("code", "country_id"), )

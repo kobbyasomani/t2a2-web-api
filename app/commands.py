@@ -53,8 +53,8 @@ def seed_tables():
 
     for cat_name, cat_description in categories.items():
         category = Category(
-            name=cat_name,
-            description=cat_description
+            category_name=cat_name,
+            description=f"Questions about {cat_description}"
         )
         db.session.add(category)
 
@@ -108,6 +108,26 @@ def seed_tables():
             "to stay for a few nights after arriving?")
     )
     db.session.add(question1)
+
+    # Add a second question
+    question2 = Question(
+        user_id=1,
+        location_id=1,
+        category_id=4,
+        date_time=datetime.now(timezone.utc),
+        body=("I'm looking for a good coffee shop in my area.")
+    )
+    db.session.add(question2)
+
+    # Add a third question
+    question3 = Question(
+        user_id=2,
+        location_id=1,
+        category_id=7,
+        date_time=datetime.now(timezone.utc),
+        body=("What's the closest 24-hour ATMs in this neighbourhood?")
+    )
+    db.session.add(question3)
 
     # Add an answer
     answer1 = Answer(

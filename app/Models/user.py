@@ -8,6 +8,8 @@ class User(db.Model):
     username = db.Column(db.String(), nullable=False, unique=True)
     email = db.Column(db.String(), nullable=False, unique=True)
     password = db.Column(db.String(), nullable=False)
-    questions = db.relationship("Question", backref="author")
-    answers = db.relationship("Answer", backref="author")
-    recommendations = db.relationship("Recommendation", backref="user")
+
+    # Relationships
+    questions = db.relationship("Question", back_populates="author")
+    answers = db.relationship("Answer", back_populates="author")
+    recommendations = db.relationship("Recommendation", back_populates="user")
