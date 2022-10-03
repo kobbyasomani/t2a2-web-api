@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from marshmallow import ValidationError
 from sqlalchemy import or_
 from app import db, bcrypt
 from app.models.user import User
@@ -17,6 +18,16 @@ def find_user(id):
     else:
         user = User.query.filter_by(username=id).first()
     return user
+
+
+def user_not_found():
+    return ({"error": "The user could not be found. "
+            "Please use a valid user id or username."}), 404
+
+
+def unauthorised_action():
+    return ({"message": "You're not authorised "
+            "to delete this user account."}, 403)
 
 
 @users.get("/")
@@ -39,8 +50,7 @@ def get_user(id):
         else:
             return jsonify(user_schema.dump(user))
     else:
-        return ({"error": "The user could not be found. "
-                "Please use a valid user id or username."}), 400
+        return user_not_found()
 
 
 @users.put("/<id>/account")
@@ -113,10 +123,34 @@ def update_user(id):
 
         # Users can only modify their own account details
         else:
-            return ({"message": "You're not authorised "
-                    "to modify this user account."}, 403)
+            return unauthorised_action()
 
     # If the user was not found, return an error
     else:
-        return ({"error": "The user could not be found. "
-                "Please use a valid user id or username."}), 400
+        return user_not_found()
+
+
+@users.delete("/<id>/account/close-account")
+@jwt_required()
+def delete_user(id):
+    """ Delete the user and associated posts """
+    user = find_user(id)
+    if user:
+        # Make sure user is editing their own account
+        if int(get_jwt_identity()) == user.user_id:
+            db.session.delete(user)
+            db.session.commit()
+
+            return {"success": f"Your account {user.username} was removed."}
+
+        # Users can only modify their own account details
+        else:
+            return unauthorised_action()
+
+    return user_not_found()
+
+
+# Return any other validation errors that are raised
+@users.errorhandler(ValidationError)
+def register_validation_error(error):
+    return error.messages, 400
