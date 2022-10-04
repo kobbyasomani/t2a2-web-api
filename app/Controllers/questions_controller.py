@@ -5,7 +5,6 @@ from marshmallow import ValidationError
 from app import db
 from app.models.question import Question
 from app.models.location import Location
-from app.models.postcode import Postcode
 from app.models.category import Category
 from app.models.user import User
 from app.schemas.question_schema import (
@@ -33,10 +32,9 @@ def get_questions():
         "category_id",
         "category_name",
         "location_id",
-        "country_id",
+        "country_code",
         "country",
         "state",
-        "city",
         "postcode",
         "suburb",
     ]
@@ -49,7 +47,6 @@ def get_questions():
             "user": {},
             "category": {},
             "location": {},
-            "postcode": {},
             "country": {}
         }
 
@@ -59,17 +56,15 @@ def get_questions():
             if key not in filterable_attributes:
                 valid_filters = False
             # Convert inputs to match database keys
-            if key in ["category_name", "country", "state", "city", "suburb"]:
+            if key in ["category_name", "country", "state", "suburb"]:
                 filter_list[key] = value.title()
 
         # Add the filter to relevant subquery filter list
         for key, value in filter_list.items():
-            if key in ["country_id", "suburb", "postcode"]:
+            if key in ["country_code", "state", "postcode", "suburb"]:
                 join_filters["location"][key] = filter_list[key]
-            elif key in ["city", "state"]:
-                join_filters["postcode"][key] = filter_list[key]
             elif key in ["country"]:
-                join_filters["country"]["name"] = filter_list[key]
+                join_filters["country"][key] = filter_list[key]
             elif key in ["username"]:
                 join_filters["user"][key] = filter_list[key]
             elif key in ["category_name"]:
@@ -86,9 +81,7 @@ def get_questions():
                         **join_filters["location"])).join(
                     Category.query.filter_by(
                         **join_filters["category"])).join(
-                    Postcode.query.filter_by(
-                        **join_filters["postcode"])).join(
-                            Postcode.country
+                            Location.country
             ).all()
 
             # Query ran successfully
@@ -99,7 +92,7 @@ def get_questions():
             return ({"error": "You can only filter Questions using "
                     "the following attributes in your query string: "
                     f"{filterable_attributes}. Filters using the _id "
-                    "suffix format must be integers. country_id must "
+                    "suffix format must be integers. country_code must "
                     "be supplied in two-letter ISO format (e.g., AU "
                     "for Australia)."}), 400
     else:
@@ -110,11 +103,14 @@ def get_questions():
 @questions.get("/<int:id>")
 def get_question(id):
     """ Return a specific question by id with all of its answers """
-    question = Question.query.get(id)
+    try:
+        question = Question.query.get(id)
+    except 404:
+        return {"error": "The question id must be an integer."}, 404
     if question:
         return jsonify(question_details_schema.dump(question))
     else:
-        return {"message": "A question with that id was not found."}, 404
+        return {"error": "A question with that id was not found."}, 404
 
 
 @questions.get("/categories/<id>")
@@ -144,13 +140,19 @@ def post_question():
     question_fields = question_post_schema.load(request.json, partial=True)
     print(type(question_fields))
 
-    # Make sure location_id, and category_id and question are supplied
-    for key in question_fields.keys():
-        if (not key in ["location_id", "category_id", "question"]
-                or len(question_fields) < 3):
-            return ({"error": "You must provide a location_id (integer)"
-                    ", category_id (integer), and question (string) to"
-                    " post a new question."}), 400
+    # # Make sure location_id, and category_id and question are supplied
+    # for key in question_fields.keys():
+    #     if (not key in ["location_id", "category_id", "question"]
+    #             or len(question_fields) < 3):
+    #         return ({"error": "You must provide a location_id (integer)"
+    #                 ", category_id (integer), and question (string) to"
+    #                 " post a new question."}), 400
+
+    # Make sure the post has a location
+
+    # Make sure the post has a category
+
+    # Make sure the post has a question body
 
     # Construct the question object and add it to the database
     new_question = Question(
@@ -167,7 +169,16 @@ def post_question():
             f"{new_question.category.category_name}."}, 201)
 
 
+@questions.post("/<question_id>/answer")
+def post_answer(question_id):
+    """ Post an answer to a squestion by id """
+    # Get the answer post fields
+
+    # Construct the answer object and add it to the dataabse
+
 # Return any other validation errors that are raised
+
+
 @questions.errorhandler(ValidationError)
 def register_validation_error(error):
     return error.messages, 400

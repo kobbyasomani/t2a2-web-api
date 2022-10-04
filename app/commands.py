@@ -7,7 +7,6 @@ from app.models.answer import Answer
 from app.models.category import Category
 from app.models.country import Country
 from app.models.location import Location
-from app.models.postcode import Postcode
 from app.models.question import Question
 from app.models.recommendation import Recommendation
 from app.models.user import User
@@ -76,24 +75,16 @@ def seed_tables():
 
     # Add a country
     country1 = Country(
-        country_id="AU",
-        name="Australia"
+        country_code="AU",
+        country="Australia"
     )
     db.session.add(country1)
 
-    # Add a postcode
-    postcode1 = Postcode(
-        code="6000",
-        country_id="AU",
-        state="Western Australia",
-        city="Perth"
-    )
-    db.session.add(postcode1)
-
     # Add a location
     location1 = Location(
-        postcode=6000,
-        country_id="AU",
+        country_code="AU",
+        state="Western Australia",
+        postcode="6000",
         suburb="Perth"
     )
     db.session.add(location1)
@@ -163,8 +154,8 @@ def seed_tables():
 
     # Add a recommendation
     recommendation1 = Recommendation(
-        user_id = 1,
-        answer_id = 1
+        user_id=1,
+        answer_id=1
     )
     db.session.add(recommendation1)
 

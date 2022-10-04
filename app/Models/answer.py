@@ -16,7 +16,7 @@ class Answer(db.Model):
     body = db.Column(db.Text, nullable=False)
 
     # Relationships
-    replies = db.relationship("Answer", remote_side=[answer_id])
+    replies = db.relationship("Answer", remote_side=[parent_id])
     recommendations = db.relationship("Recommendation", backref="answer")
     author = db.relationship("User", back_populates="answers")
     question = db.relationship("Question", back_populates="answers")
