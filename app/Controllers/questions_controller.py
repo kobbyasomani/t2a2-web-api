@@ -11,6 +11,7 @@ from app.models.user import User
 from app.schemas.question_schema import (
     question_schema, question_details_schema,
     question_update_schema, questions_schema, question_post_schema)
+from app.schemas.answer_schema import answer_schema
 from app.controllers.users_controller import find_user, get_logged_in_user
 
 
@@ -176,13 +177,6 @@ def post_question():
 
         # Prevent duplicate locations
         # Check if the provided location fields match an existing location
-        # new_location_values = MultiDict(
-        #     (column.name, getattr(new_location, column.name))
-        #     for column in new_location.__table__.columns
-        #     if column.name != "location_id")
-        # found_location = Location.query.filter_by(
-        #     **new_location_values
-        # ).first()
         found_location = duplicate_exists(
             new_location, Location, ["location_id"])
         # Add the new location if it doesn't exist
@@ -256,6 +250,7 @@ def post_question():
 def post_answer(question_id):
     """ Post an answer to a squestion by id """
     # Get the answer post fields
+    answer_fields = answer_schema
 
     # Construct the answer object and add it to the dataabse
 

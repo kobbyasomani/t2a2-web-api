@@ -1,5 +1,5 @@
 from app import ma
-from marshmallow import fields
+from marshmallow import fields, validate
 from app.models.question import Question
 from app.schemas.user_schema import UserSchema
 from app.schemas.category_schema import CategorySchema
@@ -26,13 +26,14 @@ class QuestionDetailsSchema(QuestionSchema):
 
 class QuestionPostSchema(QuestionSchema):
     location_id = fields.Integer(required=True)
-    country_code = fields.String(required=True)
+    country_code = fields.String(
+        required=True, validate=validate.Length(equal=2))
     state = fields.String(required=True)
     postcode = fields.String(required=True)
     suburb = fields.String(required=True)
     category_id = fields.Integer(required=True)
     category_name = fields.String(required=True)
-    question = fields.String(required=True)
+    question = fields.String(required=True, validate=validate.Length(min=20))
 
 
 class QuestionUpdateSchema(QuestionSchema):
