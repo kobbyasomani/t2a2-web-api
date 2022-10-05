@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
+from app.utils import duplicate_exists
 from app import db
 from app.models.question import Question
 from app.models.location import Location
@@ -142,8 +143,8 @@ def post_question():
     # Make sure the post has a location
     # Check for either a location_id or fields for a new location
     if ("location_id" not in question_fields.keys() and not all(
-        field in question_fields.keys()
-        for field in ["country_code", "state", "postcode", "suburb"])
+            field in question_fields.keys()
+            for field in ["country_code", "state", "postcode", "suburb"])
         ):
         return {"error": "You must provide a location_id (integer) "
                 "OR a country_code (ISO 3166-1, alpha-2 format), "
@@ -160,25 +161,44 @@ def post_question():
     if "location_id" in question_fields.keys():
         # Check if location_id is in database
         if Location.query.get(question_fields["location_id"]):
+            found_location = True
             found_location_id = question_fields["location_id"]
         else:
             return {"error": "The location_id could not be found."}, 404
+    # Construct a new Location instance
     else:
         new_location = Location(
             country_code=question_fields["country_code"].upper(),
             state=question_fields["state"].title(),
             postcode=question_fields["postcode"].title(),
-            suburb=question_fields["suburb"].title(),
+            suburb=question_fields["suburb"].title()
         )
-        db.session.add(new_location)
-        db.session.commit()
-        found_location_id = new_location.location_id
+
+        # Prevent duplicate locations
+        # Check if the provided location fields match an existing location
+        # new_location_values = MultiDict(
+        #     (column.name, getattr(new_location, column.name))
+        #     for column in new_location.__table__.columns
+        #     if column.name != "location_id")
+        # found_location = Location.query.filter_by(
+        #     **new_location_values
+        # ).first()
+        found_location = duplicate_exists(
+            new_location, Location, ["location_id"])
+        # Add the new location if it doesn't exist
+        if not found_location:
+            db.session.add(new_location)
+            db.session.commit()
+            new_location_id = new_location.location_id
+        # Assign the found location_id to the new question
+        else:
+            found_location_id = found_location.location_id
 
     # Make sure the post has an existing category_id or category_name
     if (not any(field in ["category_id", "category_name"]
                 for field in question_fields.keys()) or
-            all(field in question_fields.keys()
-                for field in ["category_id", "category_name"])
+        all(field in question_fields.keys()
+                    for field in ["category_id", "category_name"])
         ):
         return {"error": "You must provide a category_id "
                 "OR category_name, but not both. Visit the /categories "
@@ -211,7 +231,7 @@ def post_question():
     # Construct the question object from fields and add it to the database
     new_question = Question(
         user_id=get_logged_in_user(),
-        location_id=found_location_id,
+        location_id=found_location_id if found_location else new_location_id,
         category_id=found_category_id,
         date_time=datetime.now(timezone.utc),
         body=question_fields["question"]
@@ -227,7 +247,8 @@ def post_question():
             f"{new_question.location.suburb} "
             f"({new_question.location.postcode}), "
             f"{new_question.location.state}, "
-            f"{new_question.location.country.country}.",
+            f"{new_question.location.country.country}."
+            f"View it at: /questions/{new_question.question_id}",
             "question_id": new_question.question_id}, 201
 
 
@@ -238,9 +259,8 @@ def post_answer(question_id):
 
     # Construct the answer object and add it to the dataabse
 
+
 # Return any other validation errors that are raised
-
-
 @ questions.errorhandler(ValidationError)
 def register_validation_error(error):
     return error.messages, 400
