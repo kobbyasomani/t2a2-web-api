@@ -1,6 +1,7 @@
 from flask import Blueprint
 from app import db, bcrypt
 from datetime import datetime, timezone, timedelta
+import csv
 
 # Import models
 from app.models.answer import Answer
@@ -34,6 +35,18 @@ def create_tables():
 def seed_tables():
     """ Seed all tables in the connected database """
 
+    # Seed countries from CSV file
+    with open("./app/data/countryInfo.txt", "r") as country_info:
+        countries_reader = csv.reader(country_info, delimiter="\t")
+        for country in countries_reader:
+            new_country = Country(
+                country_code=country[0],
+                country=country[4]
+            )
+            db.session.add(new_country)
+            db.session.commit()
+    country_info.close()
+
     # Add question categories
     categories = {
         "Accommodation": "hotels and short-term rentals",
@@ -43,8 +56,9 @@ def seed_tables():
         "Shopping": "retail stores and shopping centres",
         "Transport": "public transport, taxis, and ride-sharing",
         "Money": "ATMs, banks, insurance, and financial services",
-        "Health & Medicine": ("pharmacies, doctors, "
-                            "health practitioners, and hospitals"),
+        "Health & Medicine": (
+            "pharmacies, doctors, "
+            "health practitioners, and hospitals"),
         "Services": "post, vehicle, laundromat, and other services",
         "Trades": "plumbing, electrical, carpentry, and other trade services",
         "Miscellaneous": "miscellaneous topics"
@@ -73,13 +87,6 @@ def seed_tables():
     db.session.add(user2)
     db.session.commit()
 
-    # Add a country
-    country1 = Country(
-        country_code="AU",
-        country="Australia"
-    )
-    db.session.add(country1)
-
     # Add a location
     location1 = Location(
         country_code="AU",
@@ -95,7 +102,8 @@ def seed_tables():
         location_id=1,
         category_id=1,
         date_time=datetime.now(timezone.utc),
-        body=("Hello! I'm moving to Perth soon.\nWhat's a good low-cost place "
+        body=(
+            "Hello! I'm moving to Perth soon.\nWhat's a good low-cost place "
             "to stay for a few nights after arriving?")
     )
     db.session.add(question1)
@@ -126,7 +134,8 @@ def seed_tables():
         question_id=1,
         parent_id=None,
         date_time=datetime.now(timezone.utc) + timedelta(hours=1),
-        body=("Welcome!\nAre you looking for a hostel or a hotel, "
+        body=(
+            "Welcome!\nAre you looking for a hostel or a hotel, "
             "and how many people do you need to fit?")
     )
     db.session.add(answer1)
@@ -147,7 +156,8 @@ def seed_tables():
         question_id=1,
         parent_id=2,
         date_time=datetime.now(timezone.utc) + timedelta(hours=2.5),
-        body=("ibis Perth is pretty close to the city centre and not "
+        body=(
+            "ibis Perth is pretty close to the city centre and not "
             "too expensive.")
     )
     db.session.add(reply2)
