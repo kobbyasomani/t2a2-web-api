@@ -59,7 +59,7 @@ def get_questions():
             if key in ["category_name", "country", "state", "suburb"]:
                 filter_list[key] = value.title()
 
-        # Add the filter to relevant subquery filter list
+        # Add the filter to relevant join filter list
         for key, value in filter_list.items():
             if key in ["country_code", "state", "postcode", "suburb"]:
                 join_filters["location"][key] = filter_list[key]
@@ -89,12 +89,12 @@ def get_questions():
 
         # One or more filters passed as URL query arguments were invalid
         else:
-            return ({"error": "You can only filter Questions using "
+            return {"error": "You can only filter Questions using "
                     "the following attributes in your query string: "
                     f"{filterable_attributes}. Filters using the _id "
                     "suffix format must be integers. country_code must "
                     "be supplied in two-letter ISO format (e.g., AU "
-                    "for Australia)."}), 400
+                    "for Australia)."}, 400
     else:
         questions_list = Question.query.all()
         return show_questions_list(questions_list)
@@ -138,38 +138,100 @@ def post_question():
     """ Post a new question """
     # Get the question post fields
     question_fields = question_post_schema.load(request.json, partial=True)
-    print(type(question_fields))
-
-    # # Make sure location_id, and category_id and question are supplied
-    # for key in question_fields.keys():
-    #     if (not key in ["location_id", "category_id", "question"]
-    #             or len(question_fields) < 3):
-    #         return ({"error": "You must provide a location_id (integer)"
-    #                 ", category_id (integer), and question (string) to"
-    #                 " post a new question."}), 400
 
     # Make sure the post has a location
+    # Check for either a location_id or fields for a new location
+    if ("location_id" not in question_fields.keys() and not all(
+        field in question_fields.keys()
+        for field in ["country_code", "state", "postcode", "suburb"])
+        ):
+        return {"error": "You must provide a location_id (integer) "
+                "OR a country_code (ISO 3166-1, alpha-2 format), "
+                "and the state, postcode, and suburb names as strings."}, 400
 
-    # Make sure the post has a category
+    # If location_id is provided, don't accept other location fields
+    if ("location_id" in question_fields.keys() and
+        any(field in ["country_code", "state", "postcode", "suburb"]
+            for field in question_fields.keys())):
+        return {"error": "When providing an existing location_id, "
+                "don't include any other location fields."}, 400
+
+    # Set the location to provided location_id or add a new location
+    if "location_id" in question_fields.keys():
+        # Check if location_id is in database
+        if Location.query.get(question_fields["location_id"]):
+            found_location_id = question_fields["location_id"]
+        else:
+            return {"error": "The location_id could not be found."}, 404
+    else:
+        new_location = Location(
+            country_code=question_fields["country_code"].upper(),
+            state=question_fields["state"].title(),
+            postcode=question_fields["postcode"].title(),
+            suburb=question_fields["suburb"].title(),
+        )
+        db.session.add(new_location)
+        db.session.commit()
+        found_location_id = new_location.location_id
+
+    # Make sure the post has an existing category_id or category_name
+    if (not any(field in ["category_id", "category_name"]
+                for field in question_fields.keys()) or
+            all(field in question_fields.keys()
+                for field in ["category_id", "category_name"])
+        ):
+        return {"error": "You must provide a category_id "
+                "OR category_name, but not both. Visit the /categories "
+                "endpoint for a list of valid categories."}, 400
+    if "category_id" in question_fields.keys():
+        if Category.query.get(question_fields["category_id"]):
+            found_category_id = question_fields["category_id"]
+        else:
+            return {"error": "The given category_id was not found. "
+                    "Visit the /categories endpoint for a list of "
+                    "valid categories"}, 404
+    elif "category_name" in question_fields.keys():
+        category = Category.query.filter_by(
+            category_name=question_fields["category_name"].title()).first()
+        if category:
+            found_category_id = category.category_id
+        else:
+            return {"error": "The given category_name was not found. "
+                    "Visit the /categories endpoint for a list of "
+                    "valid categories"}, 404
 
     # Make sure the post has a question body
+    if "question" not in question_fields.keys():
+        return {"error": "The new question must have a question field."}, 400
+    # Question body must be at least 20 characters long
+    if len(question_fields["question"]) < 20:
+        return {"error": "Your question must be at "
+                "least 20 characters."}, 400
 
-    # Construct the question object and add it to the database
+    # Construct the question object from fields and add it to the database
     new_question = Question(
         user_id=get_logged_in_user(),
-        location_id=question_fields["location_id"],
-        category_id=question_fields["category_id"],
+        location_id=found_location_id,
+        category_id=found_category_id,
         date_time=datetime.now(timezone.utc),
         body=question_fields["question"]
     )
     db.session.add(new_question)
     db.session.commit()
 
-    return ({"success": f"Your question '{new_question.body}' was posted in "
-            f"{new_question.category.category_name}."}, 201)
+    question_snippet = (new_question.body[0:30] if len(new_question.body) > 30
+                        else new_question.body)
+
+    return {"success": f"Your question '{question_snippet}...' was posted under "
+            f"the {new_question.category.category_name} category for "
+            f"{new_question.location.suburb} "
+            f"({new_question.location.postcode}), "
+            f"{new_question.location.state}, "
+            f"{new_question.location.country.country}.",
+            "question_id": new_question.question_id}, 201
 
 
-@questions.post("/<question_id>/answer")
+@ questions.post("/<question_id>/answer")
 def post_answer(question_id):
     """ Post an answer to a squestion by id """
     # Get the answer post fields
@@ -179,6 +241,6 @@ def post_answer(question_id):
 # Return any other validation errors that are raised
 
 
-@questions.errorhandler(ValidationError)
+@ questions.errorhandler(ValidationError)
 def register_validation_error(error):
     return error.messages, 400

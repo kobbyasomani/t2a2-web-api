@@ -26,7 +26,12 @@ class QuestionDetailsSchema(QuestionSchema):
 
 class QuestionPostSchema(QuestionSchema):
     location_id = fields.Integer(required=True)
+    country_code = fields.String(required=True)
+    state = fields.String(required=True)
+    postcode = fields.String(required=True)
+    suburb = fields.String(required=True)
     category_id = fields.Integer(required=True)
+    category_name = fields.String(required=True)
     question = fields.String(required=True)
 
 
