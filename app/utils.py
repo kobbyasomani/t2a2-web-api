@@ -3,7 +3,7 @@ from multidict import MultiDict
 
 
 def duplicate_exists(
-        new_record: object, model_name: str, ignore_list: list) -> bool:
+        new_record: object, model_name: str, ignore_list: list) -> None | list:
     """ Check whether a record with identical cell values already exists """
     with app.app_context():
         # Store the new record values in MultiDict for easy filtering
