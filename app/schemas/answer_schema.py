@@ -1,6 +1,7 @@
 from app import ma
 from marshmallow import fields, validate
 from app.models.answer import Answer
+from app.models.recommendation import Recommendation
 from app.schemas.user_schema import UserSchema
 from app.schemas.category_schema import CategorySchema
 
@@ -11,10 +12,17 @@ class AnswerSchema(ma.SQLAlchemyAutoSchema):
         include_fk = True
         dump_only = ["user_id", "question_id", "date_time"]
     answer = fields.String(required=True, validate=validate.Length(min=20))
+    recommendations = fields.Method("get_recommendation_count")
+
+    def get_recommendation_count(self, obj):
+        """ Return the number of recommendations a question has received """
+        # obj = Recommendation.query.filter_by(answer_id=obj.user_id).all()
+        return len(obj.recommendations)
 
 
 class AnswerRepliesSchema(AnswerSchema):
     replies = fields.Nested(lambda: AnswerRepliesSchema(many=True))
+
 
 class AnswerDetailsSchema(AnswerSchema):
     class Meta:
