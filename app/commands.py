@@ -47,6 +47,20 @@ def seed_tables():
             db.session.commit()
     country_info.close()
 
+    # Seed Australian locations from txt file
+    with open("./app/data/AU.txt") as locations_AU:
+        locations_reader = csv.reader(locations_AU, delimiter="\t")
+        for location in locations_reader:
+            new_location = Location(
+                country_code=location[0],
+                state=location[3],
+                postcode=location[1],
+                suburb=location[2]
+            )
+            db.session.add(new_location)
+            db.session.commit()
+    locations_AU.close()
+
     # Add question categories
     categories = {
         "Accommodation": "hotels and short-term rentals",
@@ -87,19 +101,10 @@ def seed_tables():
     db.session.add(user2)
     db.session.commit()
 
-    # Add a location
-    location1 = Location(
-        country_code="AU",
-        state="Western Australia",
-        postcode="6000",
-        suburb="Perth"
-    )
-    db.session.add(location1)
-
     # Add a question
     question1 = Question(
         user_id=1,
-        location_id=1,
+        location_id=14982,
         category_id=1,
         date_time=datetime.now(timezone.utc),
         body=(
@@ -111,7 +116,7 @@ def seed_tables():
     # Add a second question
     question2 = Question(
         user_id=1,
-        location_id=1,
+        location_id=185,
         category_id=4,
         date_time=datetime.now(timezone.utc),
         body=("I'm looking for a good coffee shop in my area.")
@@ -121,7 +126,7 @@ def seed_tables():
     # Add a third question
     question3 = Question(
         user_id=2,
-        location_id=1,
+        location_id=572,
         category_id=7,
         date_time=datetime.now(timezone.utc),
         body=("What's the closest 24-hour ATMs in this neighbourhood?")

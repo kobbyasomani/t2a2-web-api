@@ -25,6 +25,9 @@ def show_questions_list(questions_list):
     else:
         return {"message": "No matching questions were found."}, 404
 
+def location_not_found():
+    return {"error": "The location could not be found."}, 404
+
 
 @questions.get("/")
 def get_questions():
@@ -160,7 +163,7 @@ def post_question():
                 "don't include any other location fields."}, 400
 
     # Check that the country exists
-    if not Country.query.get(question_fields["country_code"]):
+    if not Country.query.get(question_fields["country_code"].upper()):
         return {"error": "The country code "
                 f"'{question_fields['country_code'].upper()}' "
                 "could not be found. Check /countries for a "
@@ -173,7 +176,8 @@ def post_question():
             found_location = True
             found_location_id = question_fields["location_id"]
         else:
-            return {"error": "The location_id could not be found."}, 404
+            return location_not_found()
+
     # Construct a new Location instance
     else:
         new_location = Location(
@@ -182,16 +186,18 @@ def post_question():
             postcode=question_fields["postcode"].title(),
             suburb=question_fields["suburb"].title()
         )
-
         # Prevent duplicate locations
         # Check if the provided location fields match an existing location
         found_location = duplicate_exists(
             new_location, Location, ["location_id"])
-        # Add the new location if it doesn't exist
+        # Add the new location if it doesn't exist (outside AU)
         if not found_location:
-            db.session.add(new_location)
-            db.session.commit()
-            new_location_id = new_location.location_id
+            if question_fields["country_code"].upper() != "AU":
+                db.session.add(new_location)
+                db.session.commit()
+                new_location_id = new_location.location_id
+            else:
+                return location_not_found()
         # Assign the found location_id to the new question
         else:
             found_location_id = found_location.location_id
@@ -249,7 +255,7 @@ def post_question():
             f"{new_question.location.suburb} "
             f"({new_question.location.postcode}), "
             f"{new_question.location.state}, "
-            f"{new_question.location.country.country}."
+            f"{new_question.location.country.country}. "
             f"View it at: /questions/{new_question.question_id}",
             "question_id": new_question.question_id}, 201
 
