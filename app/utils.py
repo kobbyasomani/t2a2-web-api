@@ -22,3 +22,14 @@ def duplicate_exists(
 def current_datetime():
     """ Return the current datetime with UTC timezone """
     return datetime.now(timezone.utc)
+
+
+def record_not_found(record_type: str):
+    """ Return a 404 error when a record was not found """
+    return {"error": f"The {record_type} could not be found."}, 404
+
+
+def unauthorised_editor(record_type: str):
+    """ Return a 403 error when a user attempts to edit a record 
+    they did not author """
+    return {"error": f"You aren't allowed to edit this {record_type}."}, 403

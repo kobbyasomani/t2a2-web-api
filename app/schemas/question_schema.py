@@ -20,7 +20,7 @@ class QuestionSchema(ma.SQLAlchemyAutoSchema):
 
 
 class QuestionDetailsSchema(QuestionSchema):
-    """ View a question with all its replies """
+    """ View a question with all of its replies """
     answers = fields.Nested(AnswerSchema(many=True))
 
 
@@ -37,8 +37,7 @@ class QuestionPostSchema(QuestionSchema):
 
 
 class QuestionUpdateSchema(QuestionSchema):
-    # update_only_field = fields.String(required=False)
-    pass
+    body = fields.String(required=True, validate=validate.Length(min=20))
 
 
 question_schema = QuestionSchema()
