@@ -35,7 +35,7 @@ def create_tables():
 def seed_tables():
     """ Seed all tables in the connected database """
 
-    # Seed countries from CSV file
+    # Seed countries from txt file
     with open("./app/data/countryInfo.txt", "r") as country_info:
         countries_reader = csv.reader(country_info, delimiter="\t")
         for country in countries_reader:

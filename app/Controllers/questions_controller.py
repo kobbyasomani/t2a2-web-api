@@ -5,6 +5,7 @@ from marshmallow import ValidationError
 from app.utils import duplicate_exists
 from app import db
 from app.models.question import Question
+from app.models.country import Country
 from app.models.location import Location
 from app.models.category import Category
 from app.models.user import User
@@ -146,7 +147,7 @@ def post_question():
     if ("location_id" not in question_fields.keys() and not all(
             field in question_fields.keys()
             for field in ["country_code", "state", "postcode", "suburb"])
-        ):
+            ):
         return {"error": "You must provide a location_id (integer) "
                 "OR a country_code (ISO 3166-1, alpha-2 format), "
                 "and the state, postcode, and suburb names as strings."}, 400
@@ -157,6 +158,13 @@ def post_question():
             for field in question_fields.keys())):
         return {"error": "When providing an existing location_id, "
                 "don't include any other location fields."}, 400
+
+    # Check that the country exists
+    if not Country.query.get(question_fields["country_code"]):
+        return {"error": "The country code "
+                f"'{question_fields['country_code'].upper()}' "
+                "could not be found. Check /countries for a "
+                "list of valid country codes."}, 404
 
     # Set the location to provided location_id or add a new location
     if "location_id" in question_fields.keys():
@@ -190,10 +198,10 @@ def post_question():
 
     # Make sure the post has an existing category_id or category_name
     if (not any(field in ["category_id", "category_name"]
-                for field in question_fields.keys()) or
-        all(field in question_fields.keys()
+                    for field in question_fields.keys()) or
+                all(field in question_fields.keys()
                     for field in ["category_id", "category_name"])
-        ):
+            ):
         return {"error": "You must provide a category_id "
                 "OR category_name, but not both. Visit the /categories "
                 "endpoint for a list of valid categories."}, 400
