@@ -15,8 +15,7 @@ class AnswerSchema(ma.SQLAlchemyAutoSchema):
     recommendations = fields.Method("get_recommendation_count")
 
     def get_recommendation_count(self, obj):
-        """ Return the number of recommendations a question has received """
-        # obj = Recommendation.query.filter_by(answer_id=obj.user_id).all()
+        """ Return the number of recommendations an answer has received """
         return len(obj.recommendations)
 
 
@@ -30,9 +29,9 @@ class AnswerDetailsSchema(AnswerSchema):
     replies = fields.Nested(AnswerRepliesSchema(many=True))
     author = fields.Nested(UserSchema)
     question = fields.Nested("QuestionSchema", only=["question_id", "body"])
-    # recommendations = fields.Nested(RecommendationSchema))
 
 
 answer_schema = AnswerSchema()
 answer_details_schema = AnswerDetailsSchema()
+answers_details_schema = AnswerDetailsSchema(many=True)
 answers_schema = AnswerSchema(many=True)

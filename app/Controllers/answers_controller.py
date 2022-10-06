@@ -13,6 +13,17 @@ from app.utils import (
 answers = Blueprint("answers", __name__, url_prefix="/answers")
 
 
+@answers.get("/")
+def get_answers():
+    """ Get all answers posted to all questions """
+    answers_list = Answer.query.all()
+
+    if answers_list:
+        return answers_schema.dump(answers_list)
+    else:
+        return {"message": "There are no answers posted yet."}
+
+
 @answers.get("/<int:id>")
 def get_answer(id):
     """ Get an answer by answer_id """

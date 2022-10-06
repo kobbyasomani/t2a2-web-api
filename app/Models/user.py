@@ -10,6 +10,9 @@ class User(db.Model):
     password = db.Column(db.String(), nullable=False)
 
     # Relationships
-    questions = db.relationship("Question", back_populates="author")
-    answers = db.relationship("Answer", back_populates="author")
-    recommendations = db.relationship("Recommendation", back_populates="user")
+    questions = db.relationship(
+        "Question", back_populates="author", cascade="all, delete")
+    answers = db.relationship(
+        "Answer", back_populates="author", cascade="all, delete")
+    recommendations = db.relationship(
+        "Recommendation", back_populates="user", cascade="all, delete")

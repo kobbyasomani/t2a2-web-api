@@ -18,6 +18,7 @@ class Answer(db.Model):
     # Relationships
     replies = db.relationship(
         "Answer", remote_side=[parent_id], cascade="all, delete")
-    recommendations = db.relationship("Recommendation", backref="answer")
+    recommendations = db.relationship(
+        "Recommendation", backref="answer", cascade="all, delete")
     author = db.relationship("User", back_populates="answers")
     question = db.relationship("Question", back_populates="answers")

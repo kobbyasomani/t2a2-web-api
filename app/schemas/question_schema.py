@@ -13,15 +13,15 @@ class QuestionSchema(ma.SQLAlchemyAutoSchema):
         include_fk = True
         load_only = ["category_id", "user_id", "location_id"]
         dump_only = ["date_time"]
-    ordered = True
     author = fields.Nested(UserSchema())
-    category = fields.Nested(CategorySchema())
+    category = fields.Nested(CategorySchema(only=["category_id", "category_name"]))
     location = fields.Nested(LocationSchema())
 
 
 class QuestionDetailsSchema(QuestionSchema):
     """ View a question with all of its replies """
     answers = fields.Nested(AnswerSchema(many=True))
+    category = fields.Nested(CategorySchema())
 
 
 class QuestionPostSchema(QuestionSchema):
@@ -42,6 +42,7 @@ class QuestionUpdateSchema(QuestionSchema):
 
 question_schema = QuestionSchema()
 question_details_schema = QuestionDetailsSchema()
+questions_details_schema = QuestionDetailsSchema(many=True)
 questions_schema = QuestionSchema(many=True)
 question_post_schema = QuestionPostSchema()
 question_update_schema = QuestionUpdateSchema()

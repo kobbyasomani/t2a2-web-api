@@ -1,11 +1,16 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, 
 from marshmallow import ValidationError
 from app import db, bcrypt
 from app.models.user import User
+from app.models.question import Question
+from app.models.answer import Answer
+from app.models.recommendation import Recommendation
 from app.schemas.user_schema import (
-    user_schema, user_private_schema, user_update_schema, users_schema)
-from app.utils import get_logged_in_user
+    user_details_schema, user_private_schema, user_update_schema, users_schema)
+from app.schemas.question_schema import questions_schema, questions_details_schema
+from app.schemas.answer_schema import answers_schema, answers_details_schema
+from app.utils import get_logged_in_user, record_not_found
 
 
 users = Blueprint("users", __name__, url_prefix="/users")
@@ -47,10 +52,10 @@ def get_user(id):
     user = find_user(id)
     if user:
         # Check if user is viewing their own profile
-        if get_logged_in_user == user.user_id:
+        if get_logged_in_user() == user.user_id:
             return jsonify(user_private_schema.dump(user))
         else:
-            return jsonify(user_schema.dump(user))
+            return jsonify(user_details_schema.dump(user))
     else:
         return user_not_found()
 
@@ -134,7 +139,7 @@ def update_user(id):
         return user_not_found()
 
 
-@users.delete("/<id>/account/close-account")
+@users.delete("/<id>/close-account")
 @jwt_required()
 def delete_user(id):
     """ Delete the user and associated posts """
@@ -152,6 +157,48 @@ def delete_user(id):
             return unauthorised_action()
 
     return user_not_found()
+
+
+@users.get("/<id>/<post_type>")
+def get_user_questions(id, post_type):
+    """ Return all questions posted by a given user """
+    user = find_user(id)
+
+    if user:
+        questions_list = Question.query.filter_by(user_id=user.user_id).all()
+        answers_list = Answer.query.filter_by(user_id=user.user_id).all()
+        recommendations_list = Answer.query.join(
+            Answer.recommendations).filter_by(user_id=user.user_id).all()
+    else:
+        return user_not_found()
+
+    # Return all questions/answers posted by user
+    if post_type == "questions":
+        if questions_list:
+            return questions_schema.dump(questions_list)
+        return {"message": f"{user.username} has not posted any "
+                "questions yet."}
+    elif post_type == "answers":
+        if answers_list:
+            return answers_details_schema.dump(answers_list)
+        return {"message": f"{user.username} has not posted any answers yet."}
+    elif post_type == "q&a":
+        if questions_list:
+            return questions_details_schema.dump(questions_list)
+        return {"message": f"{user.username} has not posted any "
+                "questions yet."}
+    elif post_type == "recommendations":
+        if recommendations_list:
+            return answers_schema.dump(recommendations_list)
+        return {"message": f"{user.username} has not given any "
+                "recommendations yet."}
+    else:
+        return {"error": f"Visit, /users/{user.username}/questions "
+                "for all questions posted by "
+                f"{user.username}; /users/{user.username}/answers "
+                f"for all answers posted by them; or "
+                f"/users/{user.username}/q&a "
+                "for their questions with answers included."}
 
 
 # Return any other validation errors that are raised

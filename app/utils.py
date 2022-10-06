@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 from flask import current_app as app
 from multidict import MultiDict
 from flask_jwt_extended import get_jwt_identity
+import psycopg2
+from app.models.user import User
 
 
 def duplicate_exists(
