@@ -3,7 +3,8 @@ from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 from app import db
 from app.models.answer import Answer
-from app.schemas.answer_schema import answer_schema, answers_schema
+from app.schemas.answer_schema import (
+    answer_schema, answer_details_schema, answers_schema)
 from app.utils import (
     record_not_found, get_logged_in_user, unauthorised_editor)
 
@@ -18,7 +19,7 @@ def get_answer(id):
 
     # Check if answer exists
     if answer:
-        return answer_schema.dump(answer)
+        return answer_details_schema.dump(answer)
     else:
         return record_not_found("answer")
 
@@ -66,8 +67,8 @@ def delete_question(id):
         db.session.delete(answer)
         db.session.commit()
         return {"success": f"Answer {answer.answer_id} was deleted "
-        f"from Question {answer.question_id}. View the question here: "
-        f"/questions/{answer.question_id}"}
+                f"from Question {answer.question_id}. View the question here: "
+                f"/questions/{answer.question_id}"}
     else:
         return unauthorised_editor("answer")
 
