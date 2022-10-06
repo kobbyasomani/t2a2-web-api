@@ -149,8 +149,8 @@ def post_question():
     # Make sure the post has a location
     # Check for either a location_id or fields for a new location
     if ("location_id" not in question_fields.keys() and not all(
-            field in question_fields.keys()
-            for field in ["country_code", "state", "postcode", "suburb"])
+        field in question_fields.keys()
+        for field in ["country_code", "state", "postcode", "suburb"])
         ):
         return {"error": "You must provide a location_id (integer) "
                 "OR a country_code (ISO 3166-1, alpha-2 format), "
@@ -206,8 +206,8 @@ def post_question():
     # Make sure the post has an existing category_id or category_name
     if (not any(field in ["category_id", "category_name"]
                 for field in question_fields.keys()) or
-        all(field in question_fields.keys()
-                    for field in ["category_id", "category_name"])
+            all(field in question_fields.keys()
+                for field in ["category_id", "category_name"])
         ):
         return {"error": "You must provide a category_id "
                 "OR category_name, but not both. Visit the /categories "
@@ -278,8 +278,13 @@ def post_answer(question_id):
         date_time=current_datetime(),
         body=answer_fields["answer"]
     )
-    db.session.add(new_answer)
-    db.session.commit()
+    # Prevent duplicate answers
+    if not duplicate_exists(new_answer, Answer, ["answer_id", "date_time"]):
+        db.session.add(new_answer)
+        db.session.commit()
+    else:
+        return {"message": "This answer has already been "
+                "posted for this question."}
 
     answer_snippet = (new_answer.body[0:30] if len(
         new_answer.body) > 30 else new_answer.body)
