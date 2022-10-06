@@ -13,12 +13,16 @@ class AnswerSchema(ma.SQLAlchemyAutoSchema):
     answer = fields.String(required=True, validate=validate.Length(min=20))
 
 
+class AnswerRepliesSchema(AnswerSchema):
+    replies = fields.Nested(lambda: AnswerRepliesSchema(many=True))
+
 class AnswerDetailsSchema(AnswerSchema):
     class Meta:
         load_only = ["question_id", "user_id"]
-    replies = fields.Nested(AnswerSchema(many=True))
+    replies = fields.Nested(AnswerRepliesSchema(many=True))
     author = fields.Nested(UserSchema)
     question = fields.Nested("QuestionSchema", only=["question_id", "body"])
+    # recommendations = fields.Nested(RecommendationSchema))
 
 
 answer_schema = AnswerSchema()

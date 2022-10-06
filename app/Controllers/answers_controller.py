@@ -3,10 +3,11 @@ from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 from app import db
 from app.models.answer import Answer
+from app.models.recommendation import Recommendation
 from app.schemas.answer_schema import (
     answer_schema, answer_details_schema, answers_schema)
 from app.utils import (
-    record_not_found, get_logged_in_user, unauthorised_editor)
+    duplicate_exists, record_not_found, get_logged_in_user, unauthorised_editor)
 
 
 answers = Blueprint("answers", __name__, url_prefix="/answers")
@@ -67,10 +68,64 @@ def delete_question(id):
         db.session.delete(answer)
         db.session.commit()
         return {"success": f"Answer {answer.answer_id} was deleted "
-                f"from Question {answer.question_id}. View the question here: "
+                f"from Question {answer.question_id}. View the question: "
                 f"/questions/{answer.question_id}"}
     else:
         return unauthorised_editor("answer")
+
+
+@answers.post("/<int:id>/<vote_action>")
+@jwt_required()
+def recommend_answer(id, vote_action):
+    """ Vote for an answer as the recommended answer to a question """
+    answer = Answer.query.get(id)
+    vote = Recommendation.query.filter(
+        Recommendation.answer_id == answer.answer_id,
+        Recommendation.user_id == get_logged_in_user()
+    ).first()
+
+    # Check if the answer exists
+    if not answer:
+        return record_not_found("answer")
+
+    # The user is adding a new recommendation to an answer
+    if vote_action == "vote":
+        # Construct the new recommendation
+        new_vote = Recommendation(
+            answer_id=answer.answer_id,
+            user_id=get_logged_in_user()
+        )
+        # Check if user has recommended this answer already
+        if duplicate_exists(new_vote, Recommendation, ["vote_id"]):
+            return {"message": "You have already recommended this answer."}
+        else:
+            # Add the recommendation
+            db.session.add(new_vote)
+            db.session.commit()
+            return {"success": f"You recommended Answer {answer.answer_id} "
+                    f"'{answer.body}': "
+                    f"/answers/{answer.answer_id} "
+                    f"as a good answer to Question {answer.question_id}: "
+                    f"/questions/{answer.question_id}"}
+
+    # The user is removing their recommendation from an answer
+    elif vote_action == "remove-vote":
+        # Check if user has recommended this answer
+        if not vote:
+            return {"message": "You haven't recommended this answer."}
+        else:
+            # Make sure user is removing their own recommendation
+            if get_logged_in_user() != vote.user_id:
+                return unauthorised_editor("recommendation")
+            else:
+                # Remove the recommendation
+                db.session.delete(vote)
+                db.session.commit()
+                return {"success": f"You removed your recommendation from "
+                        f"Answer {answer.answer_id} '{answer.body}': "
+                        f"/answers/{answer.answer_id} "
+                        f"of Question {answer.question_id}: "
+                        f"/questions/{answer.question_id}"}
 
 
 # Return any other validation errors that are raised

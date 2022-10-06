@@ -147,9 +147,9 @@ def post_question():
     # Make sure the post has a location
     # Check for either a location_id or fields for a new location
     if ("location_id" not in question_fields.keys() and not all(
-        field in question_fields.keys()
-        for field in ["country_code", "state", "postcode", "suburb"])
-        ):
+            field in question_fields.keys()
+            for field in ["country_code", "state", "postcode", "suburb"])
+            ):
         return {"error": "You must provide a location_id (integer) "
                 "OR a country_code (ISO 3166-1, alpha-2 format), "
                 "and the state, postcode, and suburb names as strings."}, 400
@@ -203,10 +203,10 @@ def post_question():
 
     # Make sure the post has an existing category_id or category_name
     if (not any(field in ["category_id", "category_name"]
-                for field in question_fields.keys()) or
-            all(field in question_fields.keys()
-                for field in ["category_id", "category_name"])
-        ):
+                    for field in question_fields.keys()) or
+                all(field in question_fields.keys()
+                    for field in ["category_id", "category_name"])
+            ):
         return {"error": "You must provide a category_id "
                 "OR category_name, but not both. Visit the /categories "
                 "endpoint for a list of valid categories."}, 400
@@ -262,6 +262,7 @@ def post_question():
 @questions.put("/<int:question_id>/edit")
 @jwt_required()
 def edit_question(question_id):
+    """ Edit a question """
     # Get the question post fields and the question to update
     question_fields = question_update_schema.load(request.json, partial=True)
     question = Question.query.get(question_id)
