@@ -17,6 +17,7 @@ class Question(db.Model):
 
     # Relationships
     author = db.relationship("User", back_populates="questions")
-    answers = db.relationship("Answer", back_populates="question")
+    answers = db.relationship(
+        "Answer", back_populates="question", cascade="all, delete")
     category = db.relationship("Category", back_populates="questions")
     location = db.relationship("Location", back_populates="questions")

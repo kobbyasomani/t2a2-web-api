@@ -49,6 +49,29 @@ def edit_answer(id):
         return record_not_found("answer")
 
 
+@answers.delete("/<int:id>/delete")
+@jwt_required()
+def delete_question(id):
+    """ Delete an answer by id """
+    answer = Answer.query.get(id)
+
+    # Check if the answer exists
+    if not answer:
+        return record_not_found("answer")
+
+    # Check if the user authored the answer
+    if get_logged_in_user() == answer.user_id:
+
+        # Delete the answer from the database
+        db.session.delete(answer)
+        db.session.commit()
+        return {"success": f"Answer {answer.answer_id} was deleted "
+        f"from Question {answer.question_id}. View the question here: "
+        f"/questions/{answer.question_id}"}
+    else:
+        return unauthorised_editor("answer")
+
+
 # Return any other validation errors that are raised
 @answers.errorhandler(ValidationError)
 def register_validation_error(error):

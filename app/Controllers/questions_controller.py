@@ -147,8 +147,8 @@ def post_question():
     # Make sure the post has a location
     # Check for either a location_id or fields for a new location
     if ("location_id" not in question_fields.keys() and not all(
-            field in question_fields.keys()
-            for field in ["country_code", "state", "postcode", "suburb"])
+        field in question_fields.keys()
+        for field in ["country_code", "state", "postcode", "suburb"])
         ):
         return {"error": "You must provide a location_id (integer) "
                 "OR a country_code (ISO 3166-1, alpha-2 format), "
@@ -161,13 +161,6 @@ def post_question():
         return {"error": "When providing an existing location_id, "
                 "don't include any other location fields."}, 400
 
-    # Check that the country exists
-    if not Country.query.get(question_fields["country_code"].upper()):
-        return {"error": "The country code "
-                f"'{question_fields['country_code'].upper()}' "
-                "could not be found. Check /countries for a "
-                "list of valid country codes."}, 404
-
     # Set the location to provided location_id or add a new location
     if "location_id" in question_fields.keys():
         # Check if location_id is in database
@@ -179,6 +172,13 @@ def post_question():
 
     # Construct a new Location instance
     else:
+        # Check that the country exists
+        if not Country.query.get(question_fields["country_code"].upper()):
+            return {"error": "The country code "
+                    f"'{question_fields['country_code'].upper()}' "
+                    "could not be found. Check /countries for a "
+                    "list of valid country codes."}, 404
+
         new_location = Location(
             country_code=question_fields["country_code"].upper(),
             state=question_fields["state"].title(),
@@ -204,8 +204,8 @@ def post_question():
     # Make sure the post has an existing category_id or category_name
     if (not any(field in ["category_id", "category_name"]
                 for field in question_fields.keys()) or
-        all(field in question_fields.keys()
-                    for field in ["category_id", "category_name"])
+            all(field in question_fields.keys()
+                for field in ["category_id", "category_name"])
         ):
         return {"error": "You must provide a category_id "
                 "OR category_name, but not both. Visit the /categories "
@@ -296,10 +296,17 @@ def post_answer(question_id):
     """ Post an answer to a question by id """
     # Get the answer post fields
     answer_fields = answer_schema.load(request.json, partial=["body"])
+    print(type(answer_fields))
 
     # Check if question exists
     if not Question.query.get(question_id):
         return record_not_found("question")
+
+    # If answer is a reply to another answer, check if parent exists
+    if "parent_id" in answer_fields:
+        if not Answer.query.get(answer_fields["parent_id"]):
+            return {"error": "The answer you are attempting to repy to "
+                    "could not be found"}, 404
 
     # Construct the new answer object and add it to the database
     new_answer = Answer(
@@ -328,6 +335,27 @@ def post_answer(question_id):
     return {"success": f"Your reply '{answer_snippet}...' was posted under "
             f"question {question_id}. View it here: "
             f"/questions/{question_id}/answers/{new_answer.answer_id}"}, 201
+
+
+@questions.delete("/<int:question_id>/delete")
+@jwt_required()
+def delete_question(question_id):
+    """ Delete a question by id """
+    question = Question.query.get(question_id)
+
+    # Check if the question exists
+    if not question:
+        return record_not_found("question")
+
+    # Check if the user authored the question
+    if get_logged_in_user() == question.user_id:
+
+        # Delete the question from the database
+        db.session.delete(question)
+        db.session.commit()
+        return {"success": f"Question {question.question_id} was deleted."}
+    else:
+        return unauthorised_editor("question")
 
 
 # Return any other validation errors that are raised
