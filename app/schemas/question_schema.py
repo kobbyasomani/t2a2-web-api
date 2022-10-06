@@ -37,7 +37,7 @@ class QuestionPostSchema(QuestionSchema):
 
 
 class QuestionUpdateSchema(QuestionSchema):
-    body = fields.String(required=True, validate=validate.Length(min=20))
+    question = fields.String(required=True, validate=validate.Length(min=20))
 
 
 question_schema = QuestionSchema()

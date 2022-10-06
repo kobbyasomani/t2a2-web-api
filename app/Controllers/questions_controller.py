@@ -266,6 +266,10 @@ def edit_question(question_id):
     question_fields = question_update_schema.load(request.json, partial=True)
     question = Question.query.get(question_id)
 
+    # Make sure there is a question field
+    if "question" not in question_fields:
+        return {"error": "You must provide a question field."}, 400
+
     # Check if question exists
     if not question:
         return record_not_found("question")
@@ -273,11 +277,11 @@ def edit_question(question_id):
         # Make sure user is editing their own question
         if get_logged_in_user() == question.user_id:
             # Check if question body has been changed
-            if question_fields["body"] == question.body:
+            if question_fields["question"] == question.body:
                 return {"message": "Your question has not been modified."}
             else:
                 # Update the record
-                question.body = question_fields["body"]
+                question.body = question_fields["question"]
                 db.session.add(question)
                 db.session.commit()
                 return {"success": "Your question was edited. View it here: "
