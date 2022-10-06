@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from flask import current_app as app
 from multidict import MultiDict
+from flask_jwt_extended import get_jwt_identity
 
 
 def duplicate_exists(
@@ -33,3 +34,9 @@ def unauthorised_editor(record_type: str):
     """ Return a 403 error when a user attempts to edit a record 
     they did not author """
     return {"error": f"You aren't allowed to edit this {record_type}."}, 403
+
+
+def get_logged_in_user():
+    """ Return the id (integer) of the logged in user """
+    logged_in_user = int(get_jwt_identity())
+    return logged_in_user

@@ -7,7 +7,7 @@ class AnswerSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Answer
         include_fk = True
-        dump_only = ["user_id", "question_id", "date_time", "body"]
+        dump_only = ["user_id", "question_id", "date_time"]
     answer = fields.String(required=True, validate=validate.Length(min=20))
 
 

@@ -24,9 +24,11 @@ def register_user():
 
     # Return an error if user already exists or email is already in use
     if username or email:
-        result = (f"A user with this {'username' if username else ''}"
-                f"{' and ' if username and email else ''}"
-                f"{'email address' if email else ''} already exists.")
+        result = (
+            f"A user with this {'username' if username else ''}"
+            f"{' and ' if username and email else ''}"
+            f"{'email address' if email else ''} already exists."
+        )
         return {"error": result}, 400
 
     # Create a new user from request fields and hash password

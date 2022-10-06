@@ -1,11 +1,11 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
-from sqlalchemy import or_
 from app import db, bcrypt
 from app.models.user import User
 from app.schemas.user_schema import (
     user_schema, user_private_schema, user_update_schema, users_schema)
+from app.utils import get_logged_in_user
 
 
 users = Blueprint("users", __name__, url_prefix="/users")
@@ -32,12 +32,6 @@ def unauthorised_action():
             "to delete this user account."}, 403)
 
 
-def get_logged_in_user():
-    """ Return the id (integer) of the logged in user """
-    logged_in_user = int(get_jwt_identity())
-    return logged_in_user
-
-
 @users.get("/")
 @jwt_required()
 def get_users():
@@ -53,7 +47,7 @@ def get_user(id):
     user = find_user(id)
     if user:
         # Check if user is viewing their own profile
-        if int(get_jwt_identity()) == user.user_id:
+        if get_logged_in_user == user.user_id:
             return jsonify(user_private_schema.dump(user))
         else:
             return jsonify(user_schema.dump(user))
@@ -67,7 +61,7 @@ def update_user(id):
     """ Update the account details of a user """
     user = find_user(id)
     # Variable for easy access to currently logged-in user
-    logged_in_user = int(get_jwt_identity())
+    logged_in_user = get_logged_in_user()
     user_fields = user_update_schema.load(
         request.json, partial=["username", "email", "new_password"])
     changes = False
@@ -123,11 +117,13 @@ def update_user(id):
 
             # Return success message and update details
             updated_user_fields = user_private_schema.dump(user)
-            return ({"success":
-                    f"Your account details"
-                    f"{' and password ' if new_password else ' '}"
-                    f"have been updated.",
-                    "account details": updated_user_fields})
+            return ({
+                "success":
+                f"Your account details"
+                f"{' and password ' if new_password else ' '}"
+                f"have been updated.",
+                "account details": updated_user_fields
+            })
 
         # Users can only modify their own account details
         else:
@@ -145,7 +141,7 @@ def delete_user(id):
     user = find_user(id)
     if user:
         # Make sure user is editing their own account
-        if int(get_jwt_identity()) == user.user_id:
+        if get_logged_in_user() == user.user_id:
             db.session.delete(user)
             db.session.commit()
 

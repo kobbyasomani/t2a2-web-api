@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 from app.utils import (
     duplicate_exists, current_datetime, record_not_found,
-    unauthorised_editor)
+    unauthorised_editor, get_logged_in_user)
 from app import db
 from app.models.question import Question
 from app.models.country import Country
@@ -15,7 +15,7 @@ from app.schemas.question_schema import (
     question_schema, question_details_schema,
     question_update_schema, questions_schema, question_post_schema)
 from app.schemas.answer_schema import answer_schema
-from app.controllers.users_controller import find_user, get_logged_in_user
+from app.controllers.users_controller import find_user
 
 
 questions = Blueprint("questions", __name__, url_prefix="/questions")
@@ -308,12 +308,15 @@ def post_answer(question_id):
         body=answer_fields["answer"]
     )
     # Prevent duplicate answers
-    if not duplicate_exists(new_answer, Answer, ["answer_id", "date_time"]):
+    existing_answer = duplicate_exists(
+        new_answer, Answer, ["answer_id", "date_time"])
+    if not existing_answer:
         db.session.add(new_answer)
         db.session.commit()
     else:
         return {"message": "This answer has already been "
-                "posted for this question."}
+                "posted for this question. View it here: "
+                f"/answers/{existing_answer.answer_id}"}
 
     answer_snippet = (new_answer.body[0:30] if len(
         new_answer.body) > 30 else new_answer.body)
