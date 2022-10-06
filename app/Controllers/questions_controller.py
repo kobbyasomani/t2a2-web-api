@@ -1,14 +1,14 @@
-from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
-from app.utils import duplicate_exists
+from app.utils import duplicate_exists, current_datetime
 from app import db
 from app.models.question import Question
 from app.models.country import Country
 from app.models.location import Location
 from app.models.category import Category
 from app.models.user import User
+from app.models.answer import Answer
 from app.schemas.question_schema import (
     question_schema, question_details_schema,
     question_update_schema, questions_schema, question_post_schema)
@@ -24,6 +24,7 @@ def show_questions_list(questions_list):
         return jsonify(questions_schema.dump(questions_list))
     else:
         return {"message": "No matching questions were found."}, 404
+
 
 def location_not_found():
     return {"error": "The location could not be found."}, 404
@@ -150,7 +151,7 @@ def post_question():
     if ("location_id" not in question_fields.keys() and not all(
             field in question_fields.keys()
             for field in ["country_code", "state", "postcode", "suburb"])
-            ):
+        ):
         return {"error": "You must provide a location_id (integer) "
                 "OR a country_code (ISO 3166-1, alpha-2 format), "
                 "and the state, postcode, and suburb names as strings."}, 400
@@ -204,10 +205,10 @@ def post_question():
 
     # Make sure the post has an existing category_id or category_name
     if (not any(field in ["category_id", "category_name"]
-                    for field in question_fields.keys()) or
-                all(field in question_fields.keys()
+                for field in question_fields.keys()) or
+        all(field in question_fields.keys()
                     for field in ["category_id", "category_name"])
-            ):
+        ):
         return {"error": "You must provide a category_id "
                 "OR category_name, but not both. Visit the /categories "
                 "endpoint for a list of valid categories."}, 400
@@ -241,7 +242,7 @@ def post_question():
         user_id=get_logged_in_user(),
         location_id=found_location_id if found_location else new_location_id,
         category_id=found_category_id,
-        date_time=datetime.now(timezone.utc),
+        date_time=current_datetime(),
         body=question_fields["question"]
     )
     db.session.add(new_question)
@@ -261,12 +262,31 @@ def post_question():
 
 
 @ questions.post("/<question_id>/answer")
+@jwt_required()
 def post_answer(question_id):
-    """ Post an answer to a squestion by id """
+    """ Post an answer to a question by id """
     # Get the answer post fields
-    answer_fields = answer_schema
+    answer_fields = answer_schema.load(request.json, partial=["body"])
 
-    # Construct the answer object and add it to the dataabse
+    # Construct the new answer object and add it to the database
+    new_answer = Answer(
+        user_id=get_logged_in_user(),
+        question_id=int(question_id),
+        parent_id=(
+            answer_fields["parent_id"] if "parent_id" in answer_fields
+            else None),
+        date_time=current_datetime(),
+        body=answer_fields["answer"]
+    )
+    db.session.add(new_answer)
+    db.session.commit()
+
+    answer_snippet = (new_answer.body[0:30] if len(
+        new_answer.body) > 30 else new_answer.body)
+
+    return {"success": f"Your reply '{answer_snippet}...' was posted under "
+            f"question {question_id}. View it here: "
+            f"/questions/{question_id}/answers/{new_answer.answer_id}"}, 201
 
 
 # Return any other validation errors that are raised

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from flask import current_app as app
 from multidict import MultiDict
 
@@ -16,3 +17,8 @@ def duplicate_exists(
         found_record = model_name.query.filter_by(
             **new_record_values).first()
         return found_record
+
+
+def current_datetime():
+    """ Return the current datetime with UTC timezone """
+    return datetime.now(timezone.utc)
