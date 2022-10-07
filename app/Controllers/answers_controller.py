@@ -44,7 +44,7 @@ def get_answer(id):
 def edit_answer(id):
     """ Update an answer by answer_id """
     # Get the request fields
-    answer_fields = answer_schema.load(request.json, partial=["body"])
+    answer_fields = answer_schema.load(request.json, partial=["body", "user_id"])
     # Get the answer to be updated from the database
     answer = Answer.query.get(id)
 
@@ -97,15 +97,16 @@ def recommend_answer(id, vote_action):
     """ Vote for an answer as the recommended answer to a question """
     # Get the answer from the database by id
     answer = Answer.query.get(id)
-    # Get recommendation from databse if it exists (in case removing a vote)
-    vote = Recommendation.query.filter(
-        Recommendation.answer_id == answer.answer_id,
-        Recommendation.user_id == get_logged_in_user()
-    ).first()
 
     # Check if the answer to be recommended exists
     if not answer:
         return record_not_found("answer")
+
+    # Get recommendation from database if it exists (in case removing a vote)
+    vote = Recommendation.query.filter(
+        Recommendation.answer_id == answer.answer_id,
+        Recommendation.user_id == get_logged_in_user()
+    ).first()
 
     # The user is adding a new recommendation to an answer
     if vote_action == "vote":

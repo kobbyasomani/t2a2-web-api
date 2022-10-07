@@ -34,8 +34,4 @@ def create_app():
     for controller in registerable_controllers:
         app.register_blueprint(controller)
 
-    @app.get('/')
-    def index():
-        return {"message": "Welcome to the AskLocal web server API!"}
-
     return app

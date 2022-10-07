@@ -293,7 +293,7 @@ def edit_question(question_id):
 def post_answer(question_id):
     """ Post an answer to a question by id """
     # Get the answer post fields
-    answer_fields = answer_schema.load(request.json, partial=["body"])
+    answer_fields = answer_schema.load(request.json, partial=["body", "user_id"])
     print(type(answer_fields))
 
     # Check if question exists in the database
@@ -334,7 +334,7 @@ def post_answer(question_id):
     # Return a success message with the path to the new answer
     return {"success": f"Your reply '{answer_snippet}...' was posted under "
             f"question {question_id}. View it here: "
-            f"/questions/{question_id}/answers/{new_answer.answer_id}"}, 201
+            f"/answers/{new_answer.answer_id}"}, 201
 
 
 @questions.delete("/<int:question_id>/delete")

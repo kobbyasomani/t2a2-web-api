@@ -173,7 +173,7 @@ def get_user_questions(id, post_type):
         questions_list = Question.query.filter_by(user_id=user.user_id).all()
         answers_list = Answer.query.filter_by(user_id=user.user_id).all()
         recommendations_list = Answer.query.join(
-            Answer.recommendations).all()
+            Answer.recommendations).filter_by(user_id=user.user_id).all()
     else:
         return user_not_found()
 
