@@ -14,6 +14,7 @@ auth = Blueprint("auth", __name__, url_prefix="/auth")
 @auth.post("/register")
 def register_user():
     """ Register a new user in the database """
+    # Get the request fields
     user_fields = user_schema.load(request.json)
 
     # Check if a user with the same username or email address
@@ -39,7 +40,7 @@ def register_user():
             user_fields["password"]).decode("utf-8"))
     )
 
-    # Add the user to the database
+    # Add the user to the database and commit
     db.session.add(new_user)
     db.session.commit()
     return {"success": f"The user {new_user.username} was created."}
@@ -53,7 +54,7 @@ def login_user():
     email = user_fields["email"] if "email" in user_fields else None
     password = user_fields["password"] if "password" in user_fields else None
 
-    # Check that the provided username or email address exists
+    # Check that the provided username or email address exists in database
     if username or email:
         user = User.query.filter(
             or_(

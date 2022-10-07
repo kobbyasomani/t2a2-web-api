@@ -5,22 +5,24 @@ from app import db, bcrypt
 from app.models.user import User
 from app.models.question import Question
 from app.models.answer import Answer
-from app.models.recommendation import Recommendation
 from app.schemas.user_schema import (
     user_details_schema, user_private_schema, user_update_schema, users_schema)
 from app.schemas.question_schema import questions_schema, questions_details_schema
-from app.schemas.answer_schema import answers_schema, answers_details_schema
-from app.utils import get_logged_in_user, record_not_found
+from app.schemas.answer_schema import answers_schema
+from app.utils import get_logged_in_user
 
 
 users = Blueprint("users", __name__, url_prefix="/users")
 
 
-def find_user(id):
-    """ Find a user in the database by user_id or username """
+def find_user(id) -> object | None:
+    """ Get a user in the database by user_id or username and 
+    return it if found """
     if id.isdigit():
+        # Get the user by id (primary key)
         user = User.query.get(int(id))
     else:
+        # Get the user by username
         user = User.query.filter_by(username=id).first()
     return user
 
@@ -32,7 +34,7 @@ def user_not_found():
 
 
 def unauthorised_action():
-    """ Return a 403 response because the user cannot perform this action"""
+    """ Return a 403 response because the user cannot perform this action """
     return ({"message": "You're not authorised "
             "to delete this user account."}, 403)
 
@@ -41,6 +43,7 @@ def unauthorised_action():
 @jwt_required()
 def get_users():
     """ Return a list of all users """
+    # Get a list of all users
     users_list = User.query.all()
     return jsonify(users_schema.dump(users_list))
 
@@ -165,6 +168,8 @@ def get_user_questions(id, post_type):
     user = find_user(id)
 
     if user:
+        # Get all the user's questions, answers, and recommendations
+        # from the database
         questions_list = Question.query.filter_by(user_id=user.user_id).all()
         answers_list = Answer.query.filter_by(user_id=user.user_id).all()
         recommendations_list = Answer.query.join(
@@ -173,6 +178,7 @@ def get_user_questions(id, post_type):
         return user_not_found()
 
     # Return all questions/answers posted by user
+    # depending on post_type parameter
     if post_type == "questions":
         if questions_list:
             return questions_schema.dump(questions_list)

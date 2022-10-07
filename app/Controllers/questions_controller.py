@@ -12,16 +12,17 @@ from app.models.category import Category
 from app.models.user import User
 from app.models.answer import Answer
 from app.schemas.question_schema import (
-    question_schema, question_details_schema,
+    question_details_schema,
     question_update_schema, questions_schema, question_post_schema)
 from app.schemas.answer_schema import answer_schema
-from app.controllers.users_controller import find_user
 
 
 questions = Blueprint("questions", __name__, url_prefix="/questions")
 
 
 def show_questions_list(questions_list):
+    """ Returns a list of questions from a given query object if any
+    exist, otherwise returns an error message """
     if questions_list:
         return jsonify(questions_schema.dump(questions_list))
     else:
@@ -46,7 +47,9 @@ def get_questions():
 
     # Check for a query string to filter results
     if request.query_string:
+        # Turn the arguments into a dictionary
         filter_list = request.args.to_dict()
+        # Placholder dict for different table filters
         join_filters = {
             "question": {},
             "user": {},
@@ -101,17 +104,22 @@ def get_questions():
                     "be supplied in two-letter ISO format (e.g., AU "
                     "for Australia)."}, 400
     else:
+        # If there are no query filters, get all questions and show them
         questions_list = Question.query.all()
         return show_questions_list(questions_list)
 
 
-@questions.get("/<int:id>")
+@questions.get("/<id>")
 def get_question(id):
     """ Return a specific question by id with all of its answers """
-    try:
-        question = Question.query.get(id)
-    except 404:
-        return {"error": "The question id must be an integer."}, 404
+    # Make sure id is an integer, else return custom error message
+    if not id.isdigit():
+        return {"error": "The question_id must be an integer. "}, 400
+
+    # Get the question form the database by id
+    question = Question.query.get(id)
+
+    # If a matching question is found, return it
     if question:
         return jsonify(question_details_schema.dump(question))
     else:
@@ -128,9 +136,9 @@ def post_question():
     # Make sure the post has a location
     # Check for either a location_id or fields for a new location
     if ("location_id" not in question_fields.keys() and not all(
-        field in question_fields.keys()
-        for field in ["country_code", "state", "postcode", "suburb"])
-        ):
+            field in question_fields.keys()
+            for field in ["country_code", "state", "postcode", "suburb"])
+            ):
         return {"error": "You must provide a location_id (integer) "
                 "OR a country_code (ISO 3166-1, alpha-2 format), "
                 "and the state, postcode, and suburb names as strings."}, 400
@@ -166,6 +174,7 @@ def post_question():
             postcode=question_fields["postcode"].title(),
             suburb=question_fields["suburb"].title()
         )
+
         # Prevent duplicate locations
         # Check if the provided location fields match an existing location
         found_location = duplicate_exists(
@@ -178,19 +187,22 @@ def post_question():
                 new_location_id = new_location.location_id
             else:
                 return record_not_found("location")
+
         # Assign the found location_id to the new question
         else:
             found_location_id = found_location.location_id
 
     # Make sure the post has an existing category_id or category_name
     if (not any(field in ["category_id", "category_name"]
-                for field in question_fields.keys()) or
-            all(field in question_fields.keys()
-                for field in ["category_id", "category_name"])
-        ):
+                    for field in question_fields.keys()) or
+                all(field in question_fields.keys()
+                    for field in ["category_id", "category_name"])
+            ):
         return {"error": "You must provide a category_id "
                 "OR category_name, but not both. Visit the /categories "
                 "endpoint for a list of valid categories."}, 400
+
+    # If searching by category_id, search by primary key
     if "category_id" in question_fields.keys():
         if Category.query.get(question_fields["category_id"]):
             found_category_id = question_fields["category_id"]
@@ -198,6 +210,8 @@ def post_question():
             return {"error": "The given category_id was not found. "
                     "Visit the /categories endpoint for a list of "
                     "valid categories"}, 404
+
+    # If searching by category_name, filter by category_name
     elif "category_name" in question_fields.keys():
         category = Category.query.filter_by(
             category_name=question_fields["category_name"].title()).first()
@@ -227,9 +241,11 @@ def post_question():
     db.session.add(new_question)
     db.session.commit()
 
+    # Add a snippet of the new question to the response
     question_snippet = (new_question.body[0:30] if len(new_question.body) > 30
                         else new_question.body)
 
+    # Return a success message with the path to the new question
     return {"success": f"Your question '{question_snippet}...' was posted under "
             f"the {new_question.category.category_name} category for "
             f"{new_question.location.suburb} "
@@ -243,16 +259,16 @@ def post_question():
 @questions.put("/<int:question_id>/edit")
 @jwt_required()
 def edit_question(question_id):
-    """ Edit a question """
+    """ Edit an existing question """
     # Get the question post fields and the question to update
     question_fields = question_update_schema.load(request.json, partial=True)
     question = Question.query.get(question_id)
 
-    # Make sure there is a question field
+    # Make sure there is a question field in the request
     if "question" not in question_fields:
         return {"error": "You must provide a question field."}, 400
 
-    # Check if question exists
+    # Check if question exists in the database
     if not question:
         return record_not_found("question")
     else:
@@ -262,7 +278,7 @@ def edit_question(question_id):
             if question_fields["question"] == question.body:
                 return {"message": "Your question has not been modified."}
             else:
-                # Update the record
+                # Update the record in the database and commit
                 question.body = question_fields["question"]
                 db.session.add(question)
                 db.session.commit()
@@ -280,11 +296,11 @@ def post_answer(question_id):
     answer_fields = answer_schema.load(request.json, partial=["body"])
     print(type(answer_fields))
 
-    # Check if question exists
+    # Check if question exists in the database
     if not Question.query.get(question_id):
         return record_not_found("question")
 
-    # If answer is a reply to another answer, check if parent exists
+    # If the answer is a reply to another answer, check if parent exists
     if "parent_id" in answer_fields:
         if not Answer.query.get(answer_fields["parent_id"]):
             return {"error": "The answer you are attempting to repy to "
@@ -311,9 +327,11 @@ def post_answer(question_id):
                 "posted for this question. View it here: "
                 f"/answers/{existing_answer.answer_id}"}
 
+    # Add a snippet of the new answer to the response
     answer_snippet = (new_answer.body[0:30] if len(
         new_answer.body) > 30 else new_answer.body)
 
+    # Return a success message with the path to the new answer
     return {"success": f"Your reply '{answer_snippet}...' was posted under "
             f"question {question_id}. View it here: "
             f"/questions/{question_id}/answers/{new_answer.answer_id}"}, 201
