@@ -118,25 +118,6 @@ def get_question(id):
         return {"error": "A question with that id was not found."}, 404
 
 
-@questions.get("/categories/<id>")
-def get_questions_by_category(id):
-    """ Return all questions for a given category name or id """
-    # Query by category_id
-    if id.isdigit():
-        questions_list = Question.query.filter(
-            Question.category_id == id,
-        ).all()
-
-    # Query by category_name
-    else:
-        questions_list = Question.query.join(
-            Question.category).filter_by(
-                category_name=id.title()
-        ).all()
-
-    return show_questions_list(questions_list)
-
-
 @questions.post("/")
 @jwt_required()
 def post_question():
@@ -147,9 +128,9 @@ def post_question():
     # Make sure the post has a location
     # Check for either a location_id or fields for a new location
     if ("location_id" not in question_fields.keys() and not all(
-                field in question_fields.keys()
-                for field in ["country_code", "state", "postcode", "suburb"])
-            ):
+        field in question_fields.keys()
+        for field in ["country_code", "state", "postcode", "suburb"])
+        ):
         return {"error": "You must provide a location_id (integer) "
                 "OR a country_code (ISO 3166-1, alpha-2 format), "
                 "and the state, postcode, and suburb names as strings."}, 400
@@ -203,10 +184,10 @@ def post_question():
 
     # Make sure the post has an existing category_id or category_name
     if (not any(field in ["category_id", "category_name"]
-                    for field in question_fields.keys()) or
+                for field in question_fields.keys()) or
             all(field in question_fields.keys()
                 for field in ["category_id", "category_name"])
-            ):
+        ):
         return {"error": "You must provide a category_id "
                 "OR category_name, but not both. Visit the /categories "
                 "endpoint for a list of valid categories."}, 400

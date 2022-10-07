@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required, 
+from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 from app import db, bcrypt
 from app.models.user import User
@@ -168,7 +168,7 @@ def get_user_questions(id, post_type):
         questions_list = Question.query.filter_by(user_id=user.user_id).all()
         answers_list = Answer.query.filter_by(user_id=user.user_id).all()
         recommendations_list = Answer.query.join(
-            Answer.recommendations).filter_by(user_id=user.user_id).all()
+            Answer.recommendations).all()
     else:
         return user_not_found()
 
@@ -180,7 +180,7 @@ def get_user_questions(id, post_type):
                 "questions yet."}
     elif post_type == "answers":
         if answers_list:
-            return answers_details_schema.dump(answers_list)
+            return answers_schema.dump(answers_list)
         return {"message": f"{user.username} has not posted any answers yet."}
     elif post_type == "q&a":
         if questions_list:

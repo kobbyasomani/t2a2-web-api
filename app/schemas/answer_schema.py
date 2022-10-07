@@ -10,9 +10,11 @@ class AnswerSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Answer
         include_fk = True
-        dump_only = ["user_id", "question_id", "date_time"]
+        dump_only = ["question_id", "date_time"]
+        load_only = ["user_id", "username"]
     answer = fields.String(required=True, validate=validate.Length(min=20))
     recommendations = fields.Method("get_recommendation_count")
+    author = fields.Nested(UserSchema(only=["user_id", "username"]))
 
     def get_recommendation_count(self, obj):
         """ Return the number of recommendations an answer has received """
